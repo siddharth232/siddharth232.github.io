@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Smart Irrigation</title>
+  <style>
+    * {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    #head {
+      height: 70px;
+      width: 100%;
+      text-align: center;
+      padding-top: 3%;
+      font-size: 30px;
+    }
+
+    #middle {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    #head h1 {
+      display: inline;
+    }
+
+    #whole {
+      background-image: url("wallpaper.jpg");
+      background-size: cover;
+      background-position: center;
+    }
+
+    #body {
+      margin-top: 4%;
+      text-align: center;
+      padding-bottom: 40px;
+      width: 100%;
+      height:217px;
+    }
+    #table{
+      margin-top: 20px;
+      margin-bottom: 20px;
+      border-collapse: collapse;
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+      display:none;
+    }
+    #footer {
+      text-align: center;
+      color: black;
+      background-color: #D3D3D3;
+      height: 100px;
+      margin-top: auto;
+      margin-left: auto;
+      margin-right: auto;
+
+    }
+
+    .foot {
+      font-size: 1.25rem;
+      padding: 30px 0 15px 0;
+    }
+
+    #name {
+      font-size: 1.25rem;
+      padding: 0 0 10px 0;
+    }
+
+    input {
+      display: inline;
+      height: 40px;
+    }
+
+    #userid {
+      width: 230px;
+      margin-top: 30px;
+      font-size: 20px;
+      border-radius: 5px 5px 5px 5px;
+      border-color: grey;
+    }
+    #but {
+      width: 150px;
+      color: white;
+      background-color: black;
+      border-color: black;
+      border-radius: 5px 5px 5px 5px;
+      cursor: pointer;
+      align-items: center;
+      height: 45px;
+      font-size: 20px;
+      margin-left: 2%;
+    }
+    td, th {
+      text-align: left;
+      padding: 8px;
+
+    }
+    #distance_graph {
+      display: "none";
+    }
+
+    #moisture_graph {
+      display: "none";
+    }
+    #channel{
+      color:white;
+    }
+    h1{
+      color:white;
+    }
+    table{
+      border:0px;
+    }
+    tr:nth-child(even) {background-color: #f2f2f2;}
+  </style>
+</head>
+
+<body>
+  <div id="whole">
+    <div id="head">
+      <h1>Iot Based Smart Irrigation</h1>
+    </div>
+    <br />
+    <div id="middle">
+      <input type="password" placeholder="Enter your device ID" id="userid">
+      <input type="Submit" id="but" value="Check status" onclick="getchannelid()">
+    </div>
+
+    <div id="body">
+      <iframe width="450" height="260" style="border: 2px solid black;" id="distance_graph"></iframe>
+      <iframe width="450" height="260" style="border: 2px solid black;" id="moisture_graph"></iframe>
+      </div>
+        </div>
+      <table id="table">
+        <tr>
+          <th>Overhead Tank</th>
+          <th>Irrigation Motor</th>
+        </tr>
+        <tr>
+          <td id="tank">xxx</td>
+          <td id="motor">zzz</td>
+        </tr>
+      </table>
+   </body>
+
+  <div id="footer">
+    <p class="foot">
+      made with ❤️ by
+    </p>
+    <p id="name">
+      Nithin&nbsp&nbsp&nbsp&nbspRithan&nbsp&nbsp&nbsp&nbspSiddharth&nbsp&nbsp&nbsp&nbspGirish
+    </p>
+  </div>
+  <script>
+    var channel_id = "";
+    var moisture;
+    var distance;
+    var distance_iframe = document.getElementById("distance_graph");
+    var moisture_iframe = document.getElementById("moisture_graph");
+    function getchannelid() {
+      console.log("get1");
+      channel_id = document.getElementById("userid").value;
+      console.log(channel_id);
+      localStorage.setItem("users_channel_id", channel_id);
+      location.reload();
+    }
+    function remove_channel_id() {
+      localStorage.removeItem("users_channel_id");
+      alert("Invalid Channel id");
+    }
+    function getdistance() {
+      var xhttp2 = new XMLHttpRequest();
+      xhttp2.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.log(this);
+          distance = JSON.parse(this.responseText).field1;
+        }
+      };
+      xhttp2.open("GET", " https://api.thingspeak.com/channels/" + channel_id + "/fields/1/last.json");
+      xhttp2.send();
+    }
+    function getmoisture() {
+      channel_id = localStorage.getItem("users_channel_id");
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.log(this.responseText);
+          moisture = JSON.parse(this.responseText).field2;
+        }
+      };
+      xhttp.open("GET", " https://api.thingspeak.com/channels/" + channel_id + "/fields/2/last.json");
+      xhttp.send();
+    }
+
+    function sethtml() {
+      console.log(distance + ":" + moisture);
+      document.getElementById("table").style.display="table";
+      distance_iframe.style.display = "inline-block";
+      distance_iframe.src = "https://thingspeak.com/channels/" + channel_id + "/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15";
+      moisture_iframe.style.display = "inline-block";
+      moisture_iframe.src = "https://thingspeak.com/channels/" + channel_id + "/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15";
+      if (distance <= 5)
+        document.getElementById('tank').innerHTML = "Full";
+      else
+        document.getElementById('tank').innerHTML = "Not Full";
+      if (moisture >= 0 && moisture <= 55 && distance <= 5)
+        document.getElementById('motor').innerHTML = "Running";
+      else
+        document.getElementById('motor').innerHTML = "Not Running";
+    }
+    if (localStorage.getItem("users_channel_id")) {
+      console.log(channel_id);
+      getmoisture();
+      getdistance();
+      setTimeout(sethtml, 3000);
+    } else {
+      document.getElementById("body").innerHTML = "<h2 id='channel'>Enter the channel id to track you irrigation</h2>";
+    }
+  </script>
+</body>
+
+</html>
